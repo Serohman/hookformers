@@ -1,0 +1,11 @@
+npm run precommit
+
+# Check if package.json or package-lock.json is staged
+if git diff --cached --name-only | grep -E 'package\.json|package-lock\.json' > /dev/null; then
+  # Run npm audit and check for vulnerabilities
+  npm audit --audit-level=high
+  if [ $? -ne 0 ]; then
+    echo "Vulnerabilities found by NPM audit. Please fix them before committing."
+    exit 1
+  fi
+fi
