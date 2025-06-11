@@ -1,12 +1,30 @@
 {
-  "name": "",
-  "author": "",
-  "license": "",
-  "description": "",
+  "name": "hookformers",
+  "author": "Seroh",
+  "license": "MIT",
+  "description": "Simple, performant React Hooks for running Transformers.js in your browser.",
   "publishConfig": {
     "access": "public"
   },
-  "keywords": [],
+  "keywords": [
+    "react",
+    "hooks",
+    "react-hooks",
+    "ai",
+    "ml",
+    "machine-learning",
+    "transformers",
+    "transformers.js",
+    "hugging face",
+    "inference",
+    "on-device-ai",
+    "web worker",
+    "nlp",
+    "computer-vision",
+    "text-generation",
+    "sentiment-analysis",
+    "image-classification"
+  ],
   "version": "0.0.0-development",
   "main": "dist/index.js",
   "files": [
