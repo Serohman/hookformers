@@ -46,6 +46,7 @@
     "ci:lint": "npx eslint ./src --config eslint.config.ci.mjs",
     "ci:test": "jest --config jest.config.js --bail",
     "ci:build": "tsc --build",
+    "ci:typecheck": "tsc --noEmit",
     "ci:format": "npx prettier --check ./src"
   },
   "devDependencies": {
