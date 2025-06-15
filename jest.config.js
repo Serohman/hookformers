@@ -1,6 +1,6 @@
 module.exports = {
   preset: "ts-jest", // Use ts-jest preset
-  testEnvironment: "node", // Set the environment to Node.js
+  testEnvironment: "jsdom", // Set the environment to JSDOM for browser-like testing
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"], // Specify module file extensions
   testMatch: ["**/src/**/*.test.(ts)"], // Specify test file patterns
   collectCoverage: true, // Collect coverage information

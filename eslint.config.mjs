@@ -7,6 +7,12 @@ export default tseslint.config(
   tseslint.configs.strict,
   {
     files: ["**/*.{js,jsx}"],
+    languageOptions: {
+      globals: {
+        module: "writable",
+        exports: "writable",
+      },
+    },
     rules: {
       "no-unused-vars": "warn",
     },
