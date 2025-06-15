@@ -35,7 +35,7 @@
     "prepare": "husky",
     "start": "npm run build",
     "build": "tsc --watch",
-    "test": "jest --watch",
+    "test": "jest --config jest.config.js --watch",
     "lint": "npx eslint ./src",
     "format": "npx prettier --write ./src",
     "precommit": "lint-staged",
@@ -51,6 +51,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@testing-library/react": "^16.3.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@tsconfig/recommended": "^1.0.8",
     "@types/jest": "^29.5.14",

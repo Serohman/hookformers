@@ -6,4 +6,7 @@ module.exports = {
   collectCoverage: true, // Collect coverage information
   coverageDirectory: ".temp/coverage", // Output coverage information to the coverage directory
   coverageReporters: ["text", "lcov"], // Report coverage in text and lcov formats
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
 };
