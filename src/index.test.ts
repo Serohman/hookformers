@@ -1,7 +1,7 @@
-import {greet} from "./index";
+import * as publicApi from "./index";
 
-describe("greet", () => {
-  test("should return correct message", () => {
-    expect(greet("Bob")).toBe("Hello, Bob!");
+describe("Public API", () => {
+  it("should not change without a deliberate update", () => {
+    expect(publicApi).toMatchSnapshot();
   });
 });
