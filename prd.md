@@ -33,13 +33,13 @@ This milestone is considered complete only when all of the following behaviors a
 
 #### 1. Successful Initialization Lifecycle
 
-- [ ] The hook must start with a 'loading' status immediately upon being rendered.
-- [ ] It must call the underlying pipeline function from the transformers library exactly once with the correct task and model arguments.
-- [ ] It must transition to an 'idle' status after the pipeline promise successfully resolves.
+- [x] The hook must start with a 'loading' status immediately upon being rendered.
+- [x] It must call the underlying pipeline function from the transformers library exactly once with the correct task and model arguments.
+- [x] It must transition to an 'idle' status after the pipeline promise successfully resolves.
 
 #### 2. Successful Prediction Lifecycle
 
-- [ ] The hook must return a stable predict function.
+- [x] The hook must return a stable predict function.
 - [ ] When predict is called, the hook's status must immediately change to 'processing'.
 - [ ] The predict function must invoke the model instance (the function returned by the resolved pipeline).
 - [ ] After the prediction resolves successfully, the status must change to 'success'.

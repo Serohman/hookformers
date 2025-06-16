@@ -1,15 +1,6 @@
-import {
-  ImagePipelineInputs,
-  ImageSegmentationPipelineOptions,
-  ImageSegmentationPipelineOutput,
-  PretrainedModelOptions,
-} from "@huggingface/transformers";
-import {useTransformer} from "./useTransformers";
+import {PretrainedModelOptions} from "@huggingface/transformers";
+import {usePipeline} from "./usePipeline";
 
-export function useImageSegmentation(model: string, options?: PretrainedModelOptions) {
-  return useTransformer<ImageSegmentationPipelineOptions, ImagePipelineInputs, ImageSegmentationPipelineOutput>(
-    "image-segmentation",
-    model,
-    options
-  );
+export function useImageSegmentation(model: string, modelOptions?: PretrainedModelOptions) {
+  return usePipeline("image-segmentation", model, modelOptions);
 }

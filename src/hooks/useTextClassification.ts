@@ -1,14 +1,6 @@
-import {
-  PretrainedModelOptions,
-  TextClassificationOutput,
-  TextClassificationPipelineOptions,
-} from "@huggingface/transformers";
-import {useTransformer} from "./useTransformers";
+import {PretrainedModelOptions} from "@huggingface/transformers";
+import {usePipeline} from "./usePipeline";
 
-export function useTextClassification(model: string, options?: PretrainedModelOptions) {
-  return useTransformer<
-    TextClassificationPipelineOptions,
-    string | string[],
-    TextClassificationOutput | TextClassificationOutput[]
-  >("text-classification", model, options);
+export function useTextClassification(model: string, modelOptions?: PretrainedModelOptions) {
+  return usePipeline("text-classification", model, modelOptions);
 }
