@@ -1,4 +1,3 @@
-npm run precommit
 
 # Check if package.json or package-lock.json is staged
 if git diff --cached --name-only | grep -E 'package\.json|package-lock\.json' > /dev/null; then

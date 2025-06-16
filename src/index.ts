@@ -4,4 +4,6 @@
  * and utilities available to developers.
  */
 
+export {useTransformer} from "./hooks/useTransformers";
+export {useImageSegmentation} from "./hooks/useImageSegmentation";
 export {useTextClassification} from "./hooks/useTextClassification";
