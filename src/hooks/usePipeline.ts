@@ -25,7 +25,16 @@ type PipelinePredict<T extends PipelineTask> = TaskToPipelineMap[T] extends (...
   ? (...args: P) => Promise<R>
   : never;
 
-export function usePipeline<T extends PipelineTask>(task: T, model: string, modelOptions?: PretrainedModelOptions) {
+// Discriminated union return type
+type UsePipelineOutput<T extends PipelineTask> =
+  | {status: "idle"; predict: PipelinePredict<T>}
+  | {status: "loading" | "processing" | "error"; predict: null};
+
+export function usePipeline<T extends PipelineTask>(
+  task: T,
+  model: string,
+  modelOptions?: PretrainedModelOptions
+): UsePipelineOutput<T> {
   const [state, setState] = useState<UsePipelineState<T>>({
     pipeline: null,
     status: "loading",
@@ -64,7 +73,7 @@ export function usePipeline<T extends PipelineTask>(task: T, model: string, mode
   }, [task, model, JSON.stringify(modelOptions)]);
 
   const predict = useCallback(
-    // Disabling `no-explicit-any`for the 2 lines below does not harm th public API typings in any way, its effect is limited to this function.
+    // Disabling `no-explicit-any` for the 2 lines below does not harm the public API typings in any way, its effect is limited to this function.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (async (...args: any[]) => {
       if (!state.pipeline) return null;
@@ -84,8 +93,9 @@ export function usePipeline<T extends PipelineTask>(task: T, model: string, mode
     [state.pipeline]
   );
 
-  return {
-    predict: state.pipeline ? predict : null,
-    status: state.status,
-  };
+  if (state.status === "idle" && state.pipeline) {
+    return {status: "idle", predict};
+  } else {
+    return {status: state.status as "loading" | "processing" | "error", predict: null};
+  }
 }
