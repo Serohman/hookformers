@@ -15,9 +15,13 @@ type PipelineTask = keyof TaskToPipelineMap;
 
 type UsePipelineStatus = "loading" | "idle" | "processing" | "error";
 
+// Extract the return type from the pipeline's predict method
+type PipelineResult<T extends PipelineTask> = Awaited<ReturnType<TaskToPipelineMap[T]>>;
+
 type UsePipelineState<T extends PipelineTask> = {
   pipeline: TaskToPipelineMap[T] | null;
   status: UsePipelineStatus;
+  result: PipelineResult<T> | null;
 };
 
 // Extract the function signature from the pipeline type
@@ -25,10 +29,10 @@ type PipelinePredict<T extends PipelineTask> = TaskToPipelineMap[T] extends (...
   ? (...args: P) => Promise<R>
   : never;
 
-// Discriminated union return type
+// Updated discriminated union return type with result
 type UsePipelineOutput<T extends PipelineTask> =
-  | {status: "idle"; predict: PipelinePredict<T>}
-  | {status: "loading" | "processing" | "error"; predict: null};
+  | {status: "idle"; predict: PipelinePredict<T>; result: PipelineResult<T> | null}
+  | {status: "loading" | "processing" | "error"; predict: null; result: PipelineResult<T> | null};
 
 export function usePipeline<T extends PipelineTask>(
   task: T,
@@ -38,13 +42,14 @@ export function usePipeline<T extends PipelineTask>(
   const [state, setState] = useState<UsePipelineState<T>>({
     pipeline: null,
     status: "loading",
+    result: null,
   });
 
   useEffect(() => {
     let cancelled = false;
 
     const loadPipeline = async () => {
-      setState((prev) => ({...prev, status: "loading"}));
+      setState((prev) => ({...prev, status: "loading", result: null})); // Clear result on model change
 
       try {
         const pipelineInstance = await pipeline(task, model, modelOptions);
@@ -53,6 +58,7 @@ export function usePipeline<T extends PipelineTask>(
           setState({
             pipeline: pipelineInstance as TaskToPipelineMap[T],
             status: "idle",
+            result: null, // Fresh start with new model
           });
         }
       } catch (error) {
@@ -60,6 +66,7 @@ export function usePipeline<T extends PipelineTask>(
           setState({
             pipeline: null,
             status: "error",
+            result: null, // Clear result on model loading error
           });
         }
       }
@@ -83,10 +90,18 @@ export function usePipeline<T extends PipelineTask>(
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await (state.pipeline as any)(...args);
-        setState((prev) => ({...prev, status: "idle"}));
+        setState((prev) => ({
+          ...prev,
+          status: "idle",
+          result: result as PipelineResult<T>, // Update result on successful prediction
+        }));
         return result;
       } catch (error) {
-        setState((prev) => ({...prev, status: "error"}));
+        setState((prev) => ({
+          ...prev,
+          status: "error",
+          result: null, // Clear result on prediction error
+        }));
         throw error;
       }
     }) as PipelinePredict<T>,
@@ -94,8 +109,12 @@ export function usePipeline<T extends PipelineTask>(
   );
 
   if (state.status === "idle" && state.pipeline) {
-    return {status: "idle", predict};
+    return {status: "idle", predict, result: state.result};
   } else {
-    return {status: state.status as "loading" | "processing" | "error", predict: null};
+    return {
+      status: state.status as "loading" | "processing" | "error",
+      predict: null,
+      result: state.result,
+    };
   }
 }

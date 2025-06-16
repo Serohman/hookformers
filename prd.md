@@ -41,9 +41,9 @@ This milestone is considered complete only when all of the following behaviors a
 
 - [x] The hook must return a stable predict function.
 - [x] When predict is called, the hook's status must immediately change to 'processing'.
-- [ ] The predict function must invoke the model instance (the function returned by the resolved pipeline).
-- [ ] After the prediction resolves successfully, the status must change to 'success'.
-- [ ] The output property in the returned state must be populated with the result of the prediction.
+- [x] The predict function must invoke the model instance (the function returned by the resolved pipeline).
+- [x] After the prediction resolves successfully, the status must change to 'idle'.
+- [x] The output property in the returned state must be populated with the result of the prediction.
 
 #### 3. Comprehensive Error Handling
 
