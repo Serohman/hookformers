@@ -1,0 +1,53 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# **Development Methodology**
+
+To ensure reliability, predictability, and high code quality, this project will adhere to a **Test-Driven Development (TDD)** approach.
+
+- **Test-First:** For every new feature or bug fix, a corresponding test will be written _first_. This test will initially fail and will only pass once the feature is correctly implemented.
+- **Unit & Integration Tests:** The test suite will include both fine-grained unit tests for individual functions and broader integration tests that simulate real-world component usage.
+- **Defining Scope:** TDD will be our primary tool for defining the scope of each task. A feature is considered "done" when all its associated tests pass. This helps create the atomic, well-defined features outlined in the Logical Dependency Chain.
+
+## TypeScript and Code Style
+
+Our guiding principle is a codebase that is **strict**, **self-documenting**, and **maintainable**. All code and tests will be written in TypeScript, adhering to the following best practices.
+
+- **Compiler Strictness**: The `tsconfig.json` file must have `strict: true` enabled. This is non-negotiable and catches a wide range of common errors at compile time.
+
+- **Type Safety**:
+  - **No `any`**: The ESLint rule `@typescript-eslint/no-explicit-any` will be enforced. All types must be explicit to leverage the full power of TypeScript.
+  - **Explicit Return Types**: All exported functions and hooks must have explicit return types. This makes the public API clear and prevents accidental regressions.
+- **Code Conventions**:
+  - **Naming**: `PascalCase` for types, interfaces, and enums. `camelCase` for variables and functions.
+  - **Types vs. Interfaces**: Use `interface` for defining the shape of public objects and API contracts, as they are extensible. Use `type` for union types, intersection types, or internal-only type definitions.
+  - **Immutability**: Avoid direct mutation of state and objects. Prefer non-mutating array/object methods (e.g., `map`, `filter`, spread syntax) to ensure predictable state flow.
+- **Documentation and Readability**:
+  - **JSDoc**: All exported functions, hooks, types, and interfaces must be documented with JSDoc comments. This documentation should explain the purpose (`@description`), parameters (`@param`), and return values (`@returns`).
+  - **Inline Comments**: Use comments to explain the _why_ behind complex or non-obvious logic within a function's body, not the _what_.
+  - **Modularity**: Keep files focused on a single responsibility (e.g., `ModelManager.ts`, `useTextClassification.ts`). Define shared types in a central `types.ts` file to avoid duplication.
+
+## Testing (Jest) Best Practices
+
+Our testing philosophy is that tests should be fast, reliable, and isolated. They should verify our library's logic, not the logic of our dependencies.
+
+- **Mocking Heavy Dependencies**: The `@huggingface/transformers` library and the browser's Web Worker API must be mocked in all tests. Test suites should not perform actual model downloads or spin up real workers, as this is slow and unreliable in a CI environment.
+- **Test Organization**:
+  - Test files will use the `*.test.ts` (or `*.test.tsx`) suffix.
+  - Use `describe` blocks to group related tests for a specific hook or function.
+  - Use `it` blocks with clear, descriptive names for individual test cases (e.g., `it('should return a loading status while the model initializes')`).
+- **Hook Testing**: All hooks will be tested using `@testing-library/react`. This allows us to test the hook's entire lifecycle, including asynchronous state updates and cleanup effects, as it would behave in a real component.
+- **Test Isolation**: Use `beforeEach` and `afterEach` to reset all mocks and clear the state of the `ModelManager` singleton between tests. This prevents one test from influencing another.
+- **Snapshot Testing**: Use snapshots judiciously to verify the shape of complex, stable output objects from different tasks. This protects against unintentional API regressions.
+- **Asynchronous Code**: All asynchronous logic must be tested using `async/await` and `@testing-library/react`'s `waitFor` utilities to ensure state updates are correctly handled.
+
+## **Tooling & Quality Gates**
+
+To enforce consistency and quality, the project will utilize a standard set of development tools. All pull requests must pass the following CI checks before being merged:
+
+- **Testing (Jest):** All tests must pass. NPM script: `ci:test`
+- **Linting (ESLint):** Code must adhere to the defined linting rules. NPM script: `ci:lint`
+- **Formatting (Prettier):** Code must be formatted correctly. NPM script: `ci:format`
+- **Type Checking (TypeScript):** The project must be free of TypeScript errors. NPM script: `ci:typecheck`

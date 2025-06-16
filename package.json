@@ -31,11 +31,14 @@
     "dist",
     "readme.md"
   ],
+  "peerDependencies": {
+    "@huggingface/transformers": "^3.5.2"
+  },
   "scripts": {
     "prepare": "husky",
     "start": "npm run build",
     "build": "tsc --watch",
-    "test": "jest --watch",
+    "test": "jest --config jest.config.js --watch",
     "lint": "npx eslint ./src",
     "format": "npx prettier --write ./src",
     "precommit": "lint-staged",
@@ -46,21 +49,26 @@
     "ci:lint": "npx eslint ./src --config eslint.config.ci.mjs",
     "ci:test": "jest --config jest.config.js --bail",
     "ci:build": "tsc --build",
+    "ci:typecheck": "tsc --noEmit",
     "ci:format": "npx prettier --check ./src"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@testing-library/react": "^16.3.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@tsconfig/recommended": "^1.0.8",
     "@types/jest": "^29.5.14",
+    "@types/react": "^19.1.8",
     "eslint": "^9.15.0",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.0.0",
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "semantic-release": "^24.2.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.15.0"
+    "typescript-eslint": "^8.15.0",
+    "@huggingface/transformers": "^3.5.2"
   }
 }
