@@ -4,7 +4,7 @@ import {
   TextClassificationPipeline,
   pipeline,
 } from "@huggingface/transformers";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 
 type TaskToPipelineMap = {
   "text-classification": TextClassificationPipeline;
@@ -16,17 +16,18 @@ type PipelineTask = keyof TaskToPipelineMap;
 type UsePipelineStatus = "loading" | "idle" | "processing" | "error";
 
 type UsePipelineState<T extends PipelineTask> = {
-  predict: TaskToPipelineMap[T] | null;
+  pipeline: TaskToPipelineMap[T] | null;
   status: UsePipelineStatus;
 };
 
-export function usePipeline<T extends PipelineTask>(
-  task: T,
-  model: string,
-  modelOptions?: PretrainedModelOptions
-): UsePipelineState<T> {
+// Extract the function signature from the pipeline type
+type PipelinePredict<T extends PipelineTask> = TaskToPipelineMap[T] extends (...args: infer P) => infer R
+  ? (...args: P) => Promise<R>
+  : never;
+
+export function usePipeline<T extends PipelineTask>(task: T, model: string, modelOptions?: PretrainedModelOptions) {
   const [state, setState] = useState<UsePipelineState<T>>({
-    predict: null,
+    pipeline: null,
     status: "loading",
   });
 
@@ -34,21 +35,21 @@ export function usePipeline<T extends PipelineTask>(
     let cancelled = false;
 
     const loadPipeline = async () => {
-      setState((prev) => ({...prev, loading: true, error: null}));
+      setState((prev) => ({...prev, status: "loading"}));
 
       try {
         const pipelineInstance = await pipeline(task, model, modelOptions);
 
         if (!cancelled) {
           setState({
-            predict: pipelineInstance,
+            pipeline: pipelineInstance as TaskToPipelineMap[T],
             status: "idle",
           });
         }
       } catch (error) {
         if (!cancelled) {
           setState({
-            predict: null,
+            pipeline: null,
             status: "error",
           });
         }
@@ -62,5 +63,29 @@ export function usePipeline<T extends PipelineTask>(
     };
   }, [task, model, JSON.stringify(modelOptions)]);
 
-  return state;
+  const predict = useCallback(
+    // Disabling `no-explicit-any`for the 2 lines below does not harm th public API typings in any way, its effect is limited to this function.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (async (...args: any[]) => {
+      if (!state.pipeline) return null;
+
+      setState((prev) => ({...prev, status: "processing"}));
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await (state.pipeline as any)(...args);
+        setState((prev) => ({...prev, status: "idle"}));
+        return result;
+      } catch (error) {
+        setState((prev) => ({...prev, status: "error"}));
+        throw error;
+      }
+    }) as PipelinePredict<T>,
+    [state.pipeline]
+  );
+
+  return {
+    predict: state.pipeline ? predict : null,
+    status: state.status,
+  };
 }
