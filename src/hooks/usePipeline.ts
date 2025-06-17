@@ -96,24 +96,14 @@ export function usePipeline<T extends PipelineTask>(
       setState((prev) => ({...prev, status: "loading", result: null, errorInfo: null, loadingInfo: null})); // Clear all state on model change
 
       try {
-        const progressCallback = (progress: ProgressInfo) => {
-          if (!cancelled) {
-            setState((prev) => ({...prev, loadingInfo: progress}));
-          }
-        };
-
-        // Handle user's custom progress callback
-        const userProgressCallback = modelOptions?.progress_callback;
-        const finalProgressCallback = userProgressCallback
-          ? (progress: ProgressInfo) => {
-              userProgressCallback(progress); // Call user's callback first
-              progressCallback(progress); // Then call ours for loadingInfo
-            }
-          : progressCallback;
-
         const pipelineInstance = await pipeline(task, model, {
           ...modelOptions,
-          progress_callback: finalProgressCallback,
+          progress_callback: (progress: ProgressInfo) => {
+            modelOptions?.progress_callback?.(progress); // Call user's callback if it exists
+            if (!cancelled) {
+              setState((prev) => ({...prev, loadingInfo: progress}));
+            }
+          },
         });
 
         if (!cancelled) {
