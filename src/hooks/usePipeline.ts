@@ -31,9 +31,9 @@ type PipelinePredict<T extends PipelineTask> = TaskToPipelineMap[T] extends (...
 
 // Updated discriminated union return type with result
 type UsePipelineOutput<T extends PipelineTask> =
-  | {status: "idle"; predict: PipelinePredict<T>; result: null}
-  | {status: "success"; predict: PipelinePredict<T>; result: PipelineResult<T>}
-  | {status: "loading" | "processing" | "error"; predict: null; result: PipelineResult<T> | null};
+  | {status: "idle"; predict: PipelinePredict<T>; result: null; reset: () => void}
+  | {status: "success"; predict: PipelinePredict<T>; result: PipelineResult<T>; reset: () => void}
+  | {status: "loading" | "processing" | "error"; predict: null; result: PipelineResult<T> | null; reset: () => void};
 
 export function usePipeline<T extends PipelineTask>(
   task: T,
@@ -109,15 +109,24 @@ export function usePipeline<T extends PipelineTask>(
     [state.pipeline]
   );
 
+  const reset = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      status: "idle",
+      result: null,
+    }));
+  }, []);
+
   if (state.status === "idle" && state.pipeline) {
-    return {status: "idle", predict, result: null};
+    return {status: "idle", predict, result: null, reset};
   } else if (state.status === "success" && state.pipeline && state.result) {
-    return {status: "success", predict, result: state.result};
+    return {status: "success", predict, result: state.result, reset};
   } else {
     return {
       status: state.status as "loading" | "processing" | "error",
       predict: null,
       result: state.result,
+      reset,
     };
   }
 }
