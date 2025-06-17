@@ -1,6 +1,7 @@
 import {
   ImageSegmentationPipeline,
   PretrainedModelOptions,
+  ProgressInfo,
   TextClassificationPipeline,
   pipeline,
 } from "@huggingface/transformers";
@@ -17,9 +18,11 @@ type UsePipelineStatus = "loading" | "idle" | "processing" | "success" | "error"
 
 type ErrorInfo = {
   message: string;
-  cause?: Error;
+  cause?: unknown;
   phase: "loading" | "processing";
 };
+
+type LoadingInfo = ProgressInfo;
 
 // Extract the return type from the pipeline's predict method
 type PipelineResult<T extends PipelineTask> = Awaited<ReturnType<TaskToPipelineMap[T]>>;
@@ -29,6 +32,7 @@ type UsePipelineState<T extends PipelineTask> = {
   status: UsePipelineStatus;
   result: PipelineResult<T> | null;
   errorInfo: ErrorInfo | null;
+  loadingInfo: LoadingInfo | null;
 };
 
 // Extract the function signature from the pipeline type
@@ -38,16 +42,39 @@ type PipelinePredict<T extends PipelineTask> = TaskToPipelineMap[T] extends (...
 
 // Updated discriminated union return type with result
 type UsePipelineOutput<T extends PipelineTask> =
-  | {status: "idle"; predict: PipelinePredict<T>; result: null; reset: () => void; errorInfo: null}
-  | {status: "success"; predict: PipelinePredict<T>; result: PipelineResult<T>; reset: () => void; errorInfo: null}
+  | {status: "idle"; predict: PipelinePredict<T>; result: null; reset: () => void; errorInfo: null; loadingInfo: null}
   | {
-      status: "loading" | "processing";
+      status: "success";
+      predict: PipelinePredict<T>;
+      result: PipelineResult<T>;
+      reset: () => void;
+      errorInfo: null;
+      loadingInfo: null;
+    }
+  | {
+      status: "loading";
       predict: null;
       result: PipelineResult<T> | null;
       reset: () => void;
       errorInfo: ErrorInfo | null;
+      loadingInfo: LoadingInfo | null;
     }
-  | {status: "error"; predict: null; result: PipelineResult<T> | null; reset: () => void; errorInfo: ErrorInfo};
+  | {
+      status: "processing";
+      predict: null;
+      result: PipelineResult<T> | null;
+      reset: () => void;
+      errorInfo: null;
+      loadingInfo: null;
+    }
+  | {
+      status: "error";
+      predict: null;
+      result: PipelineResult<T> | null;
+      reset: () => void;
+      errorInfo: ErrorInfo;
+      loadingInfo: null;
+    };
 
 export function usePipeline<T extends PipelineTask>(
   task: T,
@@ -59,16 +86,26 @@ export function usePipeline<T extends PipelineTask>(
     status: "loading",
     result: null,
     errorInfo: null,
+    loadingInfo: null,
   });
 
   useEffect(() => {
     let cancelled = false;
 
     const loadPipeline = async () => {
-      setState((prev) => ({...prev, status: "loading", result: null, errorInfo: null})); // Clear result and error on model change
+      setState((prev) => ({...prev, status: "loading", result: null, errorInfo: null, loadingInfo: null})); // Clear all state on model change
 
       try {
-        const pipelineInstance = await pipeline(task, model, modelOptions);
+        const progressCallback = (progress: ProgressInfo) => {
+          if (!cancelled) {
+            setState((prev) => ({...prev, loadingInfo: progress}));
+          }
+        };
+
+        const pipelineInstance = await pipeline(task, model, {
+          ...modelOptions,
+          progress_callback: progressCallback,
+        });
 
         if (!cancelled) {
           setState({
@@ -76,6 +113,7 @@ export function usePipeline<T extends PipelineTask>(
             status: "idle",
             result: null, // Fresh start with new model
             errorInfo: null,
+            loadingInfo: null, // Clear loading info when complete
           });
         }
       } catch (error) {
@@ -83,12 +121,13 @@ export function usePipeline<T extends PipelineTask>(
           setState({
             pipeline: null,
             status: "error",
-            result: null,
+            result: null, // Clear result on model loading error
             errorInfo: {
               message: error instanceof Error ? error.message : "Failed to load model",
-              cause: error as Error,
+              cause: error,
               phase: "loading",
             },
+            loadingInfo: null, // Clear loading info on error
           });
         }
       }
@@ -107,7 +146,7 @@ export function usePipeline<T extends PipelineTask>(
     (async (...args: any[]) => {
       if (!state.pipeline) return null;
 
-      setState((prev) => ({...prev, status: "processing", errorInfo: null}));
+      setState((prev) => ({...prev, status: "processing", errorInfo: null})); // Clear previous errors when starting new prediction
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,17 +155,17 @@ export function usePipeline<T extends PipelineTask>(
           ...prev,
           status: "success",
           result: result as PipelineResult<T>, // Update result on successful prediction
-          errorInfo: null,
+          errorInfo: null, // Clear any previous errors
         }));
         return result;
       } catch (error) {
         setState((prev) => ({
           ...prev,
           status: "error",
-          result: null,
+          result: null, // Clear result on prediction error
           errorInfo: {
             message: error instanceof Error ? error.message : "Prediction failed",
-            cause: error as Error,
+            cause: error,
             phase: "processing",
           },
         }));
@@ -142,28 +181,53 @@ export function usePipeline<T extends PipelineTask>(
       status: "idle",
       result: null,
       errorInfo: null,
+      loadingInfo: null,
     }));
   }, []);
 
   if (state.status === "idle" && state.pipeline) {
-    return {status: "idle", predict, result: null, reset, errorInfo: null};
+    return {status: "idle", predict, result: null, reset, errorInfo: null, loadingInfo: null};
   } else if (state.status === "success" && state.pipeline && state.result) {
-    return {status: "success", predict, result: state.result, reset, errorInfo: null};
+    return {status: "success", predict, result: state.result, reset, errorInfo: null, loadingInfo: null};
+  } else if (state.status === "loading") {
+    return {
+      status: "loading",
+      predict: null,
+      result: state.result,
+      reset,
+      errorInfo: state.errorInfo,
+      loadingInfo: state.loadingInfo,
+    };
+  } else if (state.status === "processing") {
+    return {
+      status: "processing",
+      predict: null,
+      result: state.result,
+      reset,
+      errorInfo: null,
+      loadingInfo: null,
+    };
   } else if (state.status === "error" && state.errorInfo) {
     return {
       status: "error",
       predict: null,
       result: state.result,
-      errorInfo: state.errorInfo,
       reset,
+      errorInfo: state.errorInfo,
+      loadingInfo: null,
     };
   } else {
+    // Fallback case - handles any unexpected state combinations
     return {
-      status: state.status as "loading" | "processing",
+      status: "error" as const,
       predict: null,
-      result: state.result,
+      result: null,
       reset,
-      errorInfo: state.errorInfo,
+      errorInfo: {
+        message: "Hook is in an invalid state",
+        phase: "loading" as const,
+      },
+      loadingInfo: null,
     };
   }
 }
