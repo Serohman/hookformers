@@ -49,9 +49,9 @@ This milestone is considered complete only when all of the following behaviors a
 
 - [x] If the pipeline function rejects during initialization, the final status must become 'error'.
 - [x] If the prediction call is rejected, the final status must also become 'error'.
-- [ ] In either error case, the error property in the state must be populated with the error object or message.
+- [x] In either error case, the error property in the state must be populated with the error object or message.
 
 #### 4. State Integrity
 
-- [ ] The output and error properties must be mutually exclusive. When one is populated, the other must be null.
-- [ ] Calling predict again should correctly clear the previous output or error before the new prediction runs.
+- [x] The output and error properties must be mutually exclusive. When one is populated, the other must be null.
+- [x] Calling predict again should correctly clear the previous output or error before the new prediction runs.
