@@ -127,17 +127,7 @@ export function usePipeline<T extends PipelineTask>(
         }
       } catch (error) {
         if (!cancelled) {
-          setState({
-            pipeline: null,
-            status: "error",
-            result: null, // Clear result on model loading error
-            errorInfo: {
-              message: error instanceof Error ? error.message : "Failed to load model",
-              cause: error,
-              phase: "loading",
-            },
-            loadingInfo: null, // Clear loading info on error
-          });
+          handleError(error, "loading", "Failed to load model");
         }
       }
     };
@@ -172,17 +162,8 @@ export function usePipeline<T extends PipelineTask>(
         }));
         return result;
       } catch (error) {
-        setState((prev) => ({
-          ...prev,
-          status: "error",
-          result: null, // Clear result on prediction error
-          errorInfo: {
-            message: error instanceof Error ? error.message : "Prediction failed",
-            cause: error,
-            phase: "processing",
-          },
-        }));
-        throw error;
+        handleError(error, "processing", "Prediction failed");
+        throw error; // Still need to re-throw for predict
       }
     }) as PipelinePredict<T>,
     [state.pipeline]
@@ -196,6 +177,31 @@ export function usePipeline<T extends PipelineTask>(
       errorInfo: null,
       loadingInfo: null,
     }));
+  }, []);
+
+  const handleError = useCallback((error: unknown, phase: "loading" | "processing", defaultMessage: string) => {
+    const errorInfo: ErrorInfo = {
+      message: error instanceof Error ? error.message : defaultMessage,
+      cause: error,
+      phase,
+    };
+
+    if (phase === "loading") {
+      setState({
+        pipeline: null,
+        status: "error",
+        result: null,
+        errorInfo,
+        loadingInfo: null,
+      });
+    } else {
+      setState((prev) => ({
+        ...prev,
+        status: "error",
+        result: null,
+        errorInfo,
+      }));
+    }
   }, []);
 
   if (state.status === "idle" && state.pipeline) {
