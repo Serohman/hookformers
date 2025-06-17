@@ -146,7 +146,12 @@ export function usePipeline<T extends PipelineTask>(
     (async (...args: any[]) => {
       if (!state.pipeline) return null;
 
-      setState((prev) => ({...prev, status: "processing", errorInfo: null})); // Clear previous errors when starting new prediction
+      if (state.status === "processing") {
+        console.warn("[usePipeline] predict() called while already processing - ignoring call");
+        return null;
+      } else {
+        setState((prev) => ({...prev, status: "processing", errorInfo: null})); // Clear previous errors when starting new prediction
+      }
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
