@@ -102,9 +102,18 @@ export function usePipeline<T extends PipelineTask>(
           }
         };
 
+        // Handle user's custom progress callback
+        const userProgressCallback = modelOptions?.progress_callback;
+        const finalProgressCallback = userProgressCallback
+          ? (progress: ProgressInfo) => {
+              userProgressCallback(progress); // Call user's callback first
+              progressCallback(progress); // Then call ours for loadingInfo
+            }
+          : progressCallback;
+
         const pipelineInstance = await pipeline(task, model, {
           ...modelOptions,
-          progress_callback: progressCallback,
+          progress_callback: finalProgressCallback,
         });
 
         if (!cancelled) {
