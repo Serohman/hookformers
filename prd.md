@@ -47,8 +47,8 @@ This milestone is considered complete only when all of the following behaviors a
 
 #### 3. Comprehensive Error Handling
 
-- [ ] If the pipeline function rejects during initialization, the final status must become 'error'.
-- [ ] If the prediction call is rejected, the final status must also become 'error'.
+- [x] If the pipeline function rejects during initialization, the final status must become 'error'.
+- [x] If the prediction call is rejected, the final status must also become 'error'.
 - [ ] In either error case, the error property in the state must be populated with the error object or message.
 
 #### 4. State Integrity
