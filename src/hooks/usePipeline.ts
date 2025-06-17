@@ -156,7 +156,6 @@ export function usePipeline<T extends PipelineTask>(
       if (!state.pipeline) return null;
 
       if (state.status === "processing") {
-        console.warn("[usePipeline] predict() called while already processing - ignoring call");
         return null;
       } else {
         setState((prev) => ({...prev, status: "processing", errorInfo: null})); // Clear previous errors when starting new prediction
@@ -203,12 +202,6 @@ export function usePipeline<T extends PipelineTask>(
     return {status: "idle", predict, result: null, reset, errorInfo: null, loadingInfo: null};
   } else if (state.status === "success") {
     if (!state.pipeline || !state.result) {
-      console.error(
-        "[usePipeline] Library Error: Invalid success state detected. " +
-          `pipeline=${!!state.pipeline}, result=${!!state.result}. ` +
-          "This is likely a bug in the usePipeline hook, not your code. " +
-          "Please report this issue."
-      );
       return {
         status: "error" as const,
         predict: null,
@@ -242,11 +235,6 @@ export function usePipeline<T extends PipelineTask>(
     };
   } else if (state.status === "error") {
     if (!state.errorInfo) {
-      console.error(
-        "[usePipeline] Library Error: Error state without errorInfo. " +
-          "This is likely a bug in the usePipeline hook, not your code. " +
-          "Please report this issue."
-      );
       return {
         status: "error" as const,
         predict: null,
@@ -268,13 +256,6 @@ export function usePipeline<T extends PipelineTask>(
       loadingInfo: null,
     };
   } else {
-    // Fallback case - handles any unexpected state combinations
-    console.error(
-      "[usePipeline] Library Error: Unexpected state combination. " +
-        `status=${state.status}. ` +
-        "This is likely a bug in the usePipeline hook, not your code. " +
-        "Please report this issue."
-    );
     return {
       status: "error" as const,
       predict: null,
