@@ -13,7 +13,7 @@ type TaskToPipelineMap = {
 
 type PipelineTask = keyof TaskToPipelineMap;
 
-type UsePipelineStatus = "loading" | "idle" | "processing" | "error";
+type UsePipelineStatus = "loading" | "idle" | "processing" | "success" | "error";
 
 // Extract the return type from the pipeline's predict method
 type PipelineResult<T extends PipelineTask> = Awaited<ReturnType<TaskToPipelineMap[T]>>;
@@ -31,7 +31,8 @@ type PipelinePredict<T extends PipelineTask> = TaskToPipelineMap[T] extends (...
 
 // Updated discriminated union return type with result
 type UsePipelineOutput<T extends PipelineTask> =
-  | {status: "idle"; predict: PipelinePredict<T>; result: PipelineResult<T> | null}
+  | {status: "idle"; predict: PipelinePredict<T>; result: null}
+  | {status: "success"; predict: PipelinePredict<T>; result: PipelineResult<T>}
   | {status: "loading" | "processing" | "error"; predict: null; result: PipelineResult<T> | null};
 
 export function usePipeline<T extends PipelineTask>(
@@ -85,14 +86,14 @@ export function usePipeline<T extends PipelineTask>(
     (async (...args: any[]) => {
       if (!state.pipeline) return null;
 
-      setState((prev) => ({...prev, status: "processing"}));
+      setState((prev) => ({...prev, status: "processing"})); // Keep previous result during processing
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await (state.pipeline as any)(...args);
         setState((prev) => ({
           ...prev,
-          status: "idle",
+          status: "success",
           result: result as PipelineResult<T>, // Update result on successful prediction
         }));
         return result;
@@ -109,7 +110,9 @@ export function usePipeline<T extends PipelineTask>(
   );
 
   if (state.status === "idle" && state.pipeline) {
-    return {status: "idle", predict, result: state.result};
+    return {status: "idle", predict, result: null};
+  } else if (state.status === "success" && state.pipeline && state.result) {
+    return {status: "success", predict, result: state.result};
   } else {
     return {
       status: state.status as "loading" | "processing" | "error",
